@@ -27,7 +27,7 @@ pub trait State: 'static {
     /// Will happen as often as possible, only limited by vysnc and the configured draw rate.
     ///
     /// By default it draws a black screen
-    fn draw(&mut self, window: &mut Window) -> Result<()> {
+    fn draw(&mut self, window: &mut Window, alpha: f64) -> Result<()> {
         window.clear(crate::graphics::Color::BLACK)?;
         Ok(())
     }

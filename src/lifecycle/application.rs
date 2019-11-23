@@ -13,6 +13,7 @@ pub struct Application<T: State> {
     pub window: Window,
     pub event_buffer: Vec<Event>,
     accumulator: f64,
+    alpha: f64,
     last_draw: f64,
     last_update: f64,
 }
@@ -25,6 +26,7 @@ impl<T: State> Application<T> {
             window,
             event_buffer: Vec::new(),
             accumulator: 0.0,
+            alpha: 0.0,
             last_draw: time,
             last_update: time,
         })
@@ -43,12 +45,13 @@ impl<T: State> Application<T> {
         self.last_update = current;
         let mut ticks = 0;
         let update_rate = self.window.update_rate();
-        while self.accumulator > 0.0 && (self.window.max_updates() == 0 || ticks < self.window.max_updates()) {
+        while self.accumulator >= update_rate && (self.window.max_updates() == 0 || ticks < self.window.max_updates()) {
             self.state.update(&mut self.window)?;
             self.window.clear_temporary_states();
             self.accumulator -= update_rate;
             ticks += 1;
         }
+        self.alpha = self.accumulator / update_rate;
         Ok(())
     }
 
@@ -57,7 +60,7 @@ impl<T: State> Application<T> {
         let current = current_time();
         let delta_draw = current - self.last_draw;
         if delta_draw >= self.window.draw_rate() {
-            self.state.draw(&mut self.window)?;
+            self.state.draw(&mut self.window, self.alpha)?;
             self.window.flush()?;
             self.window.backend().present()?;
             self.window.log_framerate(delta_draw);
@@ -78,7 +81,7 @@ impl<T: State> Application<T> {
         let current = current_time();
         let delta_draw = current - self.last_draw;
         if delta_draw >= self.window.draw_rate() {
-            self.state.draw(&mut self.window)?;
+            self.state.draw(&mut self.window, self.alpha)?;
             self.window.flush()?;
             self.window.backend().present()?;
             self.window.log_framerate(delta_draw);
